@@ -64,7 +64,7 @@
 >
     <div class="sidebar-header">
         <div class="app-brand">
-            <div class="logo">#</div>
+            <div class="logo">G</div>
             <div class="app-text">
                 <span class="app-name">Galaxy</span>
                 <span class="app-subtitle">sempre online</span>
@@ -72,39 +72,26 @@
         </div>
 
         <button
-            class="icon-btn"
+            class="icon-btn toggle"
             on:click={toggleCollapsed}
-            title="Colapsar/Expandir"
+            title={collapsed ? "Expandir barra" : "Recolher barra"}
+            aria-label={collapsed
+                ? "Expandir barra lateral"
+                : "Recolher barra lateral"}
         >
-            {#if collapsed}
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    fill="currentColor"
-                    class="bi bi-arrow-bar-right"
-                    viewBox="0 0 16 16"
-                >
-                    <path
-                        fill-rule="evenodd"
-                        d="M6 8a.5.5 0 0 0 .5.5h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L12.293 7.5H6.5A.5.5 0 0 0 6 8m-2.5 7a.5.5 0 0 1-.5-.5v-13a.5.5 0 0 1 1 0v13a.5.5 0 0 1-.5.5"
-                    />
-                </svg>
-            {:else}
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    fill="currentColor"
-                    class="bi bi-arrow-bar-left"
-                    viewBox="0 0 16 16"
-                >
-                    <path
-                        fill-rule="evenodd"
-                        d="M12.5 15a.5.5 0 0 1-.5-.5v-13a.5.5 0 0 1 1 0v13a.5.5 0 0 1-.5.5M10 8a.5.5 0 0 1-.5.5H3.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L3.707 7.5H9.5a.5.5 0 0 1 .5.5"
-                    />
-                </svg>
-            {/if}
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                fill="currentColor"
+                viewBox="0 0 16 16"
+                class="chevron-icon"
+            >
+                <path
+                    fill-rule="evenodd"
+                    d="M10.146 3.646a.5.5 0 0 1 .708.708L7.707 7.5l3.147 3.146a.5.5 0 0 1-.708.708l-3.5-3.5a.5.5 0 0 1 0-.708z"
+                />
+            </svg>
         </button>
     </div>
 
@@ -162,11 +149,10 @@
                                 width="16"
                                 height="16"
                                 fill="currentColor"
-                                class="bi bi-trash3-fill"
                                 viewBox="0 0 16 16"
                             >
                                 <path
-                                    d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5m-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5M4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06m6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528M8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5"
+                                    d="M6.5 1h3a.5.5 0 0 1 .5.5V2h2.5a.5.5 0 0 1 0 1h-.538l-.853 9.66A1.5 1.5 0 0 1 9.616 14H6.384a1.5 1.5 0 0 1-1.493-1.34L4.038 3H3.5a.5.5 0 0 1 0-1H6V1.5a.5.5 0 0 1 .5-.5Z"
                                 />
                             </svg>
                         </button>
@@ -184,7 +170,6 @@
                     width="16"
                     height="16"
                     fill="currentColor"
-                    class="bi bi-gear-wide"
                     viewBox="0 0 16 16"
                 >
                     <path
@@ -209,32 +194,38 @@
             {/if}
             <div class="user-info">
                 <span class="user-name">{userName}</span>
-                <span class="user-status">online</span>
+                <span class="user-status">
+                    <span class="status-dot"></span>
+                    online
+                </span>
             </div>
         </div>
     </div>
 
-    <div class="resize-handle no-drag" on:mousedown={startResize}></div>
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="resize-handle" on:mousedown={startResize}></div>
 </aside>
 
 <style>
     .sidebar {
         position: relative;
-        /* width controlado via style no Svelte */
         height: 98vh;
-        background: var(--bg-surface-muted);
-        color: var(--text-primary);
         display: flex;
         flex-direction: column;
-        padding: 16px;
+        padding: 16px 12px;
         box-sizing: border-box;
-        border-right: 1px solid var(--border-subtle);
+        background: var(--sidebar-bg, var(--bg-surface-muted));
+        border-right: 1px solid var(--sidebar-border, var(--border-subtle));
+        color: var(--text-primary);
+        backdrop-filter: var(--sidebar-blur, none);
         font-family:
             system-ui,
             -apple-system,
             "SF Pro Text",
             sans-serif;
-        transition: padding 0.18s ease;
+        transition:
+            padding 0.18s ease,
+            width 0.18s ease;
     }
 
     .sidebar.collapsed {
@@ -267,7 +258,6 @@
         justify-content: center;
         font-size: 16px;
         color: var(--accent);
-        box-shadow: var(--shadow-soft);
     }
 
     .app-text {
@@ -304,7 +294,34 @@
         transition:
             background 0.14s ease,
             transform 0.08s ease,
-            color 0.14s ease;
+            color 0.14s ease,
+            opacity 0.12s ease;
+    }
+
+    .icon-btn.toggle {
+        padding: 4px 6px;
+    }
+
+    .icon-btn.toggle:hover {
+        background: var(--bg-surface);
+        color: var(--text-primary);
+    }
+
+    .icon-btn:active {
+        transform: scale(0.96);
+    }
+
+    .icon-btn.small {
+        padding: 4px;
+        font-size: 14px;
+    }
+
+    .chevron-icon {
+        transition: transform 0.16s ease;
+    }
+
+    .sidebar.collapsed .chevron-icon {
+        transform: rotate(180deg);
     }
 
     .sidebar.collapsed .primary-btn,
@@ -333,20 +350,6 @@
 
     .sidebar.collapsed .chat-item {
         justify-content: center;
-    }
-
-    .icon-btn:hover {
-        background: var(--bg-surface);
-        color: var(--text-primary);
-    }
-
-    .icon-btn:active {
-        transform: scale(0.96);
-    }
-
-    .icon-btn.small {
-        padding: 4px;
-        font-size: 14px;
     }
 
     .new-chat-wrapper {
@@ -509,14 +512,6 @@
         text-overflow: ellipsis;
     }
 
-    .sidebar.collapsed .chat-title {
-        display: none;
-    }
-
-    .sidebar.collapsed .chat-item {
-        justify-content: center;
-    }
-
     .empty-state {
         margin-top: 12px;
         font-size: 12px;
@@ -572,7 +567,17 @@
     }
 
     .user-status {
-        color: var(--accent);
+        color: var(--text-secondary);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: var(--accent);
     }
 
     .sidebar.collapsed .user-info {

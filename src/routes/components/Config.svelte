@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher, onMount, onDestroy } from "svelte";
+  import { saveSetting, loadSetting } from "../data/settingsStore";
 
   export let isOpen = false;
   export let themes: Record<string, any> = {};
@@ -33,11 +34,19 @@
     }
   }
 
-  function selectTheme(id: string) {
-    if (id === currentThemeId) return;
-    currentThemeId = id;
-    dispatch("changeTheme", { id });
-    if (isDesktop) applyDesktopAppearance();
+  function hexToRgba(hex: string, a: number) {
+    let h = hex.replace("#", "").trim();
+    if (!h) return hex;
+    if (h.length === 3) {
+      h = h
+        .split("")
+        .map((c) => c + c)
+        .join("");
+    }
+    const r = parseInt(h.substring(0, 2), 16);
+    const g = parseInt(h.substring(2, 4), 16);
+    const b = parseInt(h.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${a})`;
   }
 
   let systemPrompt: string = "";
@@ -93,22 +102,7 @@
   let desktopTransparency = 100;
   let desktopBlur = 0;
 
-  function hexToRgba(hex: string, a: number) {
-    let h = hex.replace("#", "").trim();
-    if (!h) return hex;
-    if (h.length === 3) {
-      h = h
-        .split("")
-        .map((c) => c + c)
-        .join("");
-    }
-    const r = parseInt(h.substring(0, 2), 16);
-    const g = parseInt(h.substring(2, 4), 16);
-    const b = parseInt(h.substring(4, 6), 16);
-    return `rgba(${r}, ${g}, ${b}, ${a})`;
-  }
-
-  function applyDesktopAppearance() {
+  async function applyDesktopAppearance() {
     const root = document.documentElement;
     const alpha = Math.max(0, Math.min(1, desktopTransparency / 100));
 
@@ -138,8 +132,7 @@
       } else if (val.startsWith("#")) {
         try {
           root.style.setProperty(v, hexToRgba(val, alpha));
-        } catch (e) {
-        }
+        } catch (e) {}
       }
     });
 
@@ -147,16 +140,31 @@
       transparency: desktopTransparency,
       blur: desktopBlur,
     });
+
+    await saveSetting("appearance", {
+      desktopTransparency,
+      desktopBlur,
+    });
   }
 
-  function updateGeneral() {
-    dispatch("updateGeneral", {
+  async function selectTheme(id: string) {
+    if (id === currentThemeId) return;
+    currentThemeId = id;
+    dispatch("changeTheme", { id });
+    await saveSetting("theme", { themeId: id });
+    if (isDesktop) applyDesktopAppearance();
+  }
+
+  async function updateGeneral() {
+    const general = {
       systemPrompt,
       appLanguage,
       apiKeys,
       primaryAI,
       selectedModels,
-    });
+    };
+    dispatch("updateGeneral", general);
+    await saveSetting("general", general);
   }
 
   onMount(() => {
@@ -169,6 +177,43 @@
     } catch (e) {
       isDesktop = true;
     }
+
+    (async () => {
+      const general = await loadSetting("general", {
+        systemPrompt,
+        appLanguage,
+        primaryAI,
+        selectedModels,
+        apiKeys,
+      });
+
+      systemPrompt = general.systemPrompt;
+      appLanguage = general.appLanguage;
+      primaryAI = general.primaryAI;
+      selectedModels = general.selectedModels;
+      apiKeys = general.apiKeys;
+
+      const appearance = await loadSetting("appearance", {
+        desktopTransparency,
+        desktopBlur,
+      });
+
+      desktopTransparency = appearance.desktopTransparency;
+      desktopBlur = appearance.desktopBlur;
+
+      const themeSetting = await loadSetting("theme", {
+        themeId: currentThemeId,
+      });
+
+      if (themeSetting.themeId && themeSetting.themeId !== currentThemeId) {
+        currentThemeId = themeSetting.themeId;
+        dispatch("changeTheme", { id: currentThemeId });
+      }
+
+      if (isDesktop) {
+        applyDesktopAppearance();
+      }
+    })();
   });
 
   onDestroy(() => {
@@ -242,10 +287,8 @@
               <textarea
                 rows="4"
                 placeholder="Descreva a personalidade, tom e instruções iniciais para a IA..."
-                on:input={(e) => {
-                  systemPrompt = (e.target as HTMLTextAreaElement).value;
-                  updateGeneral();
-                }}
+                bind:value={systemPrompt}
+                on:input={updateGeneral}
               ></textarea>
             </label>
 
@@ -270,12 +313,9 @@
                   <span>{k} key</span>
                   <input
                     type="text"
-                    value={apiKeys[k]}
+                    bind:value={apiKeys[k]}
                     placeholder={`Insira a chave para ${k}`}
-                    on:input={(e) => {
-                      apiKeys[k] = (e.target as HTMLInputElement).value;
-                      updateGeneral();
-                    }}
+                    on:input={updateGeneral}
                   />
                 </label>
               {/each}
@@ -319,13 +359,8 @@
                     <label class="field">
                       <span>Modelo ({p.name})</span>
                       <select
-                        value={selectedModels[p.id]}
-                        on:change={(e) => {
-                          selectedModels[p.id] = (
-                            e.target as HTMLSelectElement
-                          ).value;
-                          updateGeneral();
-                        }}
+                        bind:value={selectedModels[p.id]}
+                        on:change={updateGeneral}
                       >
                         {#each p.models as m}
                           <option value={m}>{m}</option>
@@ -843,7 +878,6 @@
     .settings-modal {
       width: calc(100vw - 16px);
       max-width: 100%;
-      max-height: 100%;
       max-height: 100%;
       border-radius: 12px;
       margin: 8px;
