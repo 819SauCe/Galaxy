@@ -21,14 +21,154 @@
     }
   }
 
+  function handleOverlayKeydown(e: KeyboardEvent) {
+    if ((e.key === "Enter" || e.key === " ") && isOpen) {
+      close();
+    }
+  }
+
+  function handleModalKeydown(e: KeyboardEvent) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.stopPropagation();
+    }
+  }
+
   function selectTheme(id: string) {
     if (id === currentThemeId) return;
     currentThemeId = id;
     dispatch("changeTheme", { id });
+    if (isDesktop) applyDesktopAppearance();
+  }
+
+  let systemPrompt: string = "";
+  let appLanguage: string = "pt-BR";
+
+  let apiKeys: Record<string, string> = {
+    openai: "",
+    copilot: "",
+    anthropic: "",
+  };
+
+  const aiProviders = [
+    {
+      id: "openai",
+      name: "OpenAI",
+      bullets: [
+        "Excelente geração de linguagem natural e compreensão de contexto",
+        "Versátil para conversas, resumos, tradução e criatividade",
+        "Modelos disponíveis para maior capacidade (gpt-4) ou custo reduzido (gpt-3.5)",
+      ],
+      models: ["gpt-4", "gpt-4o", "gpt-3.5-turbo"],
+    },
+    {
+      id: "copilot",
+      name: "Copilot",
+      bullets: [
+        "Otimizado para assistência de programação e completions de código",
+        "Útil para gerar snippets, refatoração e explicações de trechos",
+        "Melhor para produtividade dev — integra bem com fluxos de IDE",
+      ],
+      models: ["copilot-code-x", "copilot-chat"],
+    },
+    {
+      id: "anthropic",
+      name: "Anthropic",
+      bullets: [
+        "Mais focado em segurança e alinhamento",
+        "Bom para instruções sensíveis e completions longos",
+      ],
+      models: ["claude-2", "claude-instant"],
+    },
+  ];
+
+  let primaryAI: string = aiProviders[0].id;
+
+  let selectedModels: Record<string, string> = {
+    openai: aiProviders[0].models[0],
+    copilot: aiProviders[1].models[0],
+    anthropic: aiProviders[2].models[0],
+  };
+
+  let isDesktop = true;
+  let desktopTransparency = 100;
+  let desktopBlur = 0;
+
+  function hexToRgba(hex: string, a: number) {
+    let h = hex.replace("#", "").trim();
+    if (!h) return hex;
+    if (h.length === 3) {
+      h = h
+        .split("")
+        .map((c) => c + c)
+        .join("");
+    }
+    const r = parseInt(h.substring(0, 2), 16);
+    const g = parseInt(h.substring(2, 4), 16);
+    const b = parseInt(h.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${a})`;
+  }
+
+  function applyDesktopAppearance() {
+    const root = document.documentElement;
+    const alpha = Math.max(0, Math.min(1, desktopTransparency / 100));
+
+    root.style.setProperty("--app-blur", `${desktopBlur}px`);
+
+    const surfaceVars = [
+      "--bg-body",
+      "--bg-surface",
+      "--bg-surface-muted",
+      "--sidebar-bg",
+      "--chat-bot-bg",
+      "--input-bg",
+    ];
+
+    const cs = getComputedStyle(root);
+    surfaceVars.forEach((v) => {
+      const val = cs.getPropertyValue(v).trim();
+      if (!val) return;
+      if (val.startsWith("rgb")) {
+        const nums = val.match(/\d+/g);
+        if (nums && nums.length >= 3) {
+          const r = nums[0],
+            g = nums[1],
+            b = nums[2];
+          root.style.setProperty(v, `rgba(${r}, ${g}, ${b}, ${alpha})`);
+        }
+      } else if (val.startsWith("#")) {
+        try {
+          root.style.setProperty(v, hexToRgba(val, alpha));
+        } catch (e) {
+        }
+      }
+    });
+
+    dispatch("changeAppearance", {
+      transparency: desktopTransparency,
+      blur: desktopBlur,
+    });
+  }
+
+  function updateGeneral() {
+    dispatch("updateGeneral", {
+      systemPrompt,
+      appLanguage,
+      apiKeys,
+      primaryAI,
+      selectedModels,
+    });
   }
 
   onMount(() => {
     window.addEventListener("keydown", handleKeydown);
+    try {
+      isDesktop =
+        !/Mobi|Android|iPhone|iPad/.test(navigator.userAgent) &&
+        window.matchMedia &&
+        window.matchMedia("(pointer: fine)").matches;
+    } catch (e) {
+      isDesktop = true;
+    }
   });
 
   onDestroy(() => {
@@ -37,12 +177,26 @@
 </script>
 
 {#if isOpen}
-  <div class="settings-overlay" on:click|self={close}>
-    <div class="settings-modal" on:click|stopPropagation>
-      <header class="settings-header">
+  <div
+    class="settings-overlay"
+    on:click|self={close}
+    on:keydown={handleOverlayKeydown}
+    role="button"
+    tabindex="0"
+    aria-label="Fechar configurações"
+  >
+    <div
+      class="settings-modal"
+      on:click|stopPropagation
+      on:keydown={handleModalKeydown}
+      role="dialog"
+      aria-modal="true"
+      tabindex="-1"
+    >
+      <header class="settings-header drag-region">
         <h2>Configurações</h2>
 
-        <nav class="settings-tabs-top">
+        <nav class="settings-tabs-top no-drag">
           <button
             class:active={activeTab === "general"}
             on:click={() => (activeTab = "general")}
@@ -65,7 +219,11 @@
           </button>
         </nav>
 
-        <button class="settings-close" on:click={close} aria-label="Fechar">
+        <button
+          class="settings-close no-drag"
+          on:click={close}
+          aria-label="Fechar"
+        >
           ✕
         </button>
       </header>
@@ -75,30 +233,150 @@
           <div class="settings-section">
             <h3>Geral</h3>
             <p class="section-description">
-              Ajuste preferências básicas do chatbot.
+              Ajuste preferências básicas do chatbot: personalidade, idioma,
+              chaves de API, modelos e IA principal.
             </p>
 
-            <!-- Só exemplos, você pode trocar tudo aqui -->
             <label class="field">
-              <span>Nome do assistente</span>
-              <input type="text" placeholder="Ex.: Nébula, Pixel, etc." />
+              <span>System prompt (personalidade da IA)</span>
+              <textarea
+                rows="4"
+                placeholder="Descreva a personalidade, tom e instruções iniciais para a IA..."
+                on:input={(e) => {
+                  systemPrompt = (e.target as HTMLTextAreaElement).value;
+                  updateGeneral();
+                }}
+              ></textarea>
             </label>
 
             <label class="field">
-              <span>Estilo de resposta padrão</span>
-              <select>
-                <option>Equilibrado</option>
-                <option>Resumido</option>
-                <option>Detalhado</option>
-                <option>Mais técnico</option>
+              <span>Idioma do app</span>
+              <select bind:value={appLanguage} on:change={updateGeneral}>
+                <option value="pt-BR">Português (pt-BR)</option>
+                <option value="en-US">English (en-US)</option>
+                <option value="es-ES">Español (es-ES)</option>
               </select>
             </label>
+
+            <div class="settings-subsection">
+              <h4>Chaves de API</h4>
+              <p class="section-description">
+                Insira as chaves para cada provedor (ex.: OpenAI, Copilot,
+                Afims).
+              </p>
+
+              {#each Object.keys(apiKeys) as k}
+                <label class="field">
+                  <span>{k} key</span>
+                  <input
+                    type="text"
+                    value={apiKeys[k]}
+                    placeholder={`Insira a chave para ${k}`}
+                    on:input={(e) => {
+                      apiKeys[k] = (e.target as HTMLInputElement).value;
+                      updateGeneral();
+                    }}
+                  />
+                </label>
+              {/each}
+            </div>
+
+            <div class="settings-subsection">
+              <h4>Modelos e IA principal</h4>
+              <p class="section-description">
+                Escolha o modelo por provedor e selecione qual IA será a
+                principal (rádio).
+              </p>
+
+              <div class="ai-providers-list">
+                {#each aiProviders as p}
+                  <div
+                    class="ai-provider-row"
+                    role="group"
+                    aria-label={`Config ${p.name}`}
+                  >
+                    <div class="ai-provider-header">
+                      <label class="ai-provider-radio">
+                        <input
+                          type="radio"
+                          name="primaryAI"
+                          value={p.id}
+                          bind:group={primaryAI}
+                          on:change={updateGeneral}
+                        />
+                        <span class="ai-provider-name">{p.name}</span>
+                      </label>
+                    </div>
+
+                    <div class="ai-provider-desc">
+                      <ul class="ai-bullets">
+                        {#each p.bullets as b}
+                          <li>{b}</li>
+                        {/each}
+                      </ul>
+                    </div>
+
+                    <label class="field">
+                      <span>Modelo ({p.name})</span>
+                      <select
+                        value={selectedModels[p.id]}
+                        on:change={(e) => {
+                          selectedModels[p.id] = (
+                            e.target as HTMLSelectElement
+                          ).value;
+                          updateGeneral();
+                        }}
+                      >
+                        {#each p.models as m}
+                          <option value={m}>{m}</option>
+                        {/each}
+                      </select>
+                    </label>
+                  </div>
+                {/each}
+              </div>
+            </div>
           </div>
         {/if}
 
         {#if activeTab === "theme"}
           <div class="settings-section">
             <h3>Tema</h3>
+
+            {#if isDesktop}
+              <div class="settings-subsection">
+                <h4>Aparência (Desktop)</h4>
+                <p class="section-description">
+                  Ajuste a transparência e o desfoque do app desktop (apenas em
+                  PCs).
+                </p>
+
+                <label class="field">
+                  <span>Transparência da janela: {desktopTransparency}%</span>
+                  <input
+                    type="range"
+                    min="20"
+                    max="100"
+                    step="1"
+                    bind:value={desktopTransparency}
+                    on:input={() => applyDesktopAppearance()}
+                  />
+                </label>
+
+                <label class="field">
+                  <span>Blur (backdrop): {desktopBlur}px</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="30"
+                    step="1"
+                    bind:value={desktopBlur}
+                    on:input={() => applyDesktopAppearance()}
+                  />
+                </label>
+              </div>
+            {/if}
+
             <p class="section-description">
               Escolha um tema visual. A prévia abaixo mostra como o chat fica.
             </p>
@@ -224,7 +502,7 @@
     color: var(--text-primary);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-strong);
-    width: 60rem;
+    width: min(92vw, 60rem);
     height: 80vh;
     display: flex;
     flex-direction: column;
@@ -267,7 +545,6 @@
     background: rgba(255, 255, 255, 0.06);
   }
 
-  /* Abas no topo */
   .settings-tabs-top {
     display: flex;
     gap: 6px;
@@ -283,7 +560,9 @@
     padding: 6px 10px;
     border-radius: 999px;
     cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      color 0.15s ease;
   }
 
   .settings-tabs-top button:hover {
@@ -335,6 +614,19 @@
     font-size: 14px;
   }
 
+  .field textarea {
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius-md);
+    padding: 8px 10px;
+    color: var(--text-primary);
+    font-size: 14px;
+    resize: none;
+    min-height: 88px;
+    max-height: 220px;
+    box-sizing: border-box;
+  }
+
   .field input[type="text"]:focus,
   .field select:focus {
     outline: none;
@@ -342,7 +634,12 @@
     box-shadow: 0 0 0 1px var(--accent-soft);
   }
 
-  /* Grid de temas */
+  .field textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent-soft);
+  }
+
   .theme-options-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -358,7 +655,10 @@
     border: 1px solid var(--border-subtle);
     background: var(--bg-surface-muted);
     cursor: pointer;
-    transition: border 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
+    transition:
+      border 0.15s ease,
+      box-shadow 0.15s ease,
+      transform 0.08s ease;
   }
 
   .theme-option:hover {
@@ -424,7 +724,6 @@
     background: var(--preview-user);
   }
 
-  /* Lista de atalhos */
   .shortcut-list {
     display: flex;
     flex-direction: column;
@@ -471,18 +770,127 @@
     text-align: right;
   }
 
+  .ai-providers-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .ai-provider-row {
+    background: var(--bg-surface-muted);
+    border: 1px solid var(--border-subtle);
+    padding: 14px;
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+    justify-content: space-between;
+    min-height: 160px;
+  }
+
+  .ai-provider-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .ai-provider-radio {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .ai-provider-name {
+    font-weight: 600;
+  }
+
+  .ai-bullets {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.3;
+  }
+
+  .ai-provider-desc {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: flex-start;
+  }
+
+  .ai-provider-desc .ai-bullets {
+    margin-top: 2px;
+  }
+
+  .ai-provider-row .field select {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .ai-provider-row .field {
+    margin-top: 6px;
+  }
+
+  .ai-provider-radio input[type="radio"] {
+    width: 18px;
+    height: 18px;
+  }
+
   @media (max-width: 600px) {
     .settings-modal {
-      max-height: 90vh;
+      width: calc(100vw - 16px);
+      max-width: 100%;
+      max-height: 100%;
+      max-height: 100%;
+      border-radius: 12px;
+      margin: 8px;
+      padding-bottom: calc(12px + env(safe-area-inset-bottom));
+      padding-left: calc(12px + env(safe-area-inset-left));
+      padding-right: calc(12px + env(safe-area-inset-right));
     }
 
     .settings-header {
       padding-top: 12px;
+      gap: 8px;
     }
 
     .settings-close {
-      top: 8px;
-      right: 8px;
+      top: 10px;
+      right: 10px;
+    }
+
+    .ai-providers-list {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .ai-provider-row {
+      min-height: 140px;
+      padding: 12px;
+    }
+
+    .ai-provider-radio input[type="radio"] {
+      width: 22px;
+      height: 22px;
+    }
+
+    .ai-provider-name {
+      font-size: 16px;
+    }
+
+    .ai-provider-row .field select {
+      font-size: 15px;
+      padding: 10px;
+    }
+
+    .field input[type="text"],
+    .field select,
+    textarea {
+      font-size: 15px;
+      padding: 10px;
     }
   }
 </style>

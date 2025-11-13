@@ -22,7 +22,7 @@
 
         "--accent": "#0A84FF",
         "--accent-soft": "rgba(10, 132, 255, 0.12)",
-        "--accent-contrast": "#0B0B0F",
+        "--accent-contrast": "#FFFFFF",
 
         "--chat-user-bg": "#0B84FF",
         "--chat-user-border": "#1C76E8",
@@ -116,7 +116,7 @@
 
         "--accent": "#BD93F9",
         "--accent-soft": "rgba(189, 147, 249, 0.18)",
-        "--accent-contrast": "#14151C",
+        "--accent-contrast": "#FFFFFF",
 
         "--chat-user-bg": "#50FA7B",
         "--chat-user-border": "#3BE46A",
@@ -163,7 +163,7 @@
 
         "--accent": "#88C0D0",
         "--accent-soft": "rgba(136, 192, 208, 0.18)",
-        "--accent-contrast": "#1A202B",
+        "--accent-contrast": "#FFFFFF",
 
         "--chat-user-bg": "#88C0D0",
         "--chat-user-border": "#81A1C1",
@@ -210,7 +210,7 @@
 
         "--accent": "#268BD2",
         "--accent-soft": "rgba(38, 139, 210, 0.16)",
-        "--accent-contrast": "#FDF6E3",
+        "--accent-contrast": "#000000",
 
         "--chat-user-bg": "#268BD2",
         "--chat-user-border": "#1C6FA7",
@@ -257,7 +257,7 @@
 
         "--accent": "#3B82F6",
         "--accent-soft": "rgba(59, 130, 246, 0.20)",
-        "--accent-contrast": "#020617",
+        "--accent-contrast": "#FFFFFF",
 
         "--chat-user-bg": "#3B82F6",
         "--chat-user-border": "#2563EB",
@@ -304,7 +304,7 @@
 
         "--accent": "#FABD2F",
         "--accent-soft": "rgba(250, 189, 47, 0.18)",
-        "--accent-contrast": "#1D2021",
+        "--accent-contrast": "#FFFFFF",
 
         "--chat-user-bg": "#FABD2F",
         "--chat-user-border": "#D79921",
@@ -351,7 +351,7 @@
 
         "--accent": "#D79921",
         "--accent-soft": "rgba(215, 153, 33, 0.18)",
-        "--accent-contrast": "#FBF1C7",
+        "--accent-contrast": "#000000",
 
         "--chat-user-bg": "#D79921",
         "--chat-user-border": "#B57614",

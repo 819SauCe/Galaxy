@@ -1,0 +1,212 @@
+<script lang="ts">
+	import { invoke } from '@tauri-apps/api/core';
+	import { onMount } from 'svelte';
+
+	let isMaximized = false;
+	let isControlsHovered = false;
+
+	onMount(async () => {
+		try {
+			const result = await invoke<boolean>('plugin:window|is_maximized');
+			isMaximized = result;
+		} catch (e) {
+			console.error('Erro ao verificar maximizado:', e);
+		}
+	});
+
+	const handleMinimize = async () => {
+		await invoke('plugin:window|minimize');
+	};
+
+	const handleMaximize = async () => {
+		if (isMaximized) {
+			await invoke('plugin:window|unmaximize');
+		} else {
+			await invoke('plugin:window|maximize');
+		}
+		isMaximized = !isMaximized;
+	};
+
+	const handleClose = async () => {
+		await invoke('plugin:window|close');
+	};
+</script>
+
+<div class="title-bar" data-tauri-drag-region>
+	<div class="title-content">
+		<span class="app-title">Galaxy</span>
+	</div>
+
+	<div class="title-spacer"></div>
+
+	<div
+		class="window-controls {isControlsHovered ? 'show-icons' : ''}"
+		on:mouseenter={() => (isControlsHovered = true)}
+		on:mouseleave={() => (isControlsHovered = false)}
+		role="group"
+	>
+		<button
+			class="window-btn minimize"
+			on:click|stopPropagation={handleMinimize}
+			title="Minimizar"
+			data-tauri-drag-region="false"
+		>
+			<span class="glyph">–</span>
+		</button>
+
+		<button
+			class="window-btn maximize"
+			on:click|stopPropagation={handleMaximize}
+			title={isMaximized ? 'Restaurar' : 'Maximizar'}
+			data-tauri-drag-region="false"
+		>
+			<span class="glyph">{isMaximized ? '▢' : '◻'}</span>
+		</button>
+
+        <button
+			class="window-btn close"
+			on:click|stopPropagation={handleClose}
+			title="Fechar"
+			data-tauri-drag-region="false"
+		>
+			<span class="glyph">×</span>
+		</button>
+	</div>
+</div>
+
+<style>
+	.title-bar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		height: 30px;
+		padding: 0 10px;
+		user-select: none;
+		position: relative;
+		z-index: 1000;
+		-webkit-user-select: none;
+		-webkit-app-region: drag;
+		background: rgba(246, 246, 246, 0.9);
+		border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+	}
+
+	@supports (backdrop-filter: blur(20px)) {
+		.title-bar {
+			backdrop-filter: blur(20px);
+		}
+	}
+
+	:global(.dark) .title-bar {
+		background: rgba(25, 25, 25, 0.9);
+		border-bottom-color: rgba(255, 255, 255, 0.06);
+	}
+
+	.window-controls {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		-webkit-app-region: no-drag;
+	}
+
+	.window-btn {
+		width: 12px;
+		height: 12px;
+		border-radius: 999px;
+		border: 0.5px solid rgba(0, 0, 0, 0.12);
+		padding: 0;
+		margin: 0;
+		outline: none;
+		background-clip: padding-box;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: default;
+		position: relative;
+		transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s ease;
+	}
+
+	.window-btn:active {
+		transform: translateY(0.5px) scale(0.98);
+		box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08) inset;
+	}
+
+	.window-btn.close {
+		background: #ff5f57;
+		border-color: #e0443e;
+	}
+
+	.window-btn.minimize {
+		background: #ffbd2e;
+		border-color: #e1a325;
+	}
+
+	.window-btn.maximize {
+		background: #28c840;
+		border-color: #20a836;
+	}
+
+	:global(.dark) .window-btn.close {
+		background: #ff5f57;
+		border-color: #b63630;
+	}
+
+	:global(.dark) .window-btn.minimize {
+		background: #ffbd2e;
+		border-color: #b3851e;
+	}
+
+	:global(.dark) .window-btn.maximize {
+		background: #28c840;
+		border-color: #1c7f30;
+	}
+
+	.glyph {
+		font-size: 9px;
+		line-height: 1;
+		color: rgba(0, 0, 0, 0.7);
+		opacity: 0;
+		transform: scale(0.8);
+		transition: opacity 0.12s ease, transform 0.12s ease;
+		pointer-events: none;
+	}
+
+	.window-controls.show-icons .glyph {
+		opacity: 0.9;
+		transform: scale(1);
+	}
+
+	:global(.dark) .glyph {
+		color: rgba(0, 0, 0, 0.8);
+	}
+
+	.title-content {
+		flex: 1;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		pointer-events: none;
+		min-width: 0;
+	}
+
+	.app-title {
+		font-size: 12px;
+		font-weight: 500;
+		color: #4a4a4a;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	:global(.dark) .app-title {
+		color: #e6e6e6;
+	}
+
+	.window-btn[data-tauri-drag-region='false'] {
+		-webkit-app-region: no-drag;
+		cursor: pointer;
+	}
+
+	.window-controls.show-icons .window-btn {
+		filter: brightness(1.03);
+	}
+</style>
