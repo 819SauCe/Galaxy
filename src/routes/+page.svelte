@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { invoke } from "@tauri-apps/api/core";
   import Database from "@tauri-apps/plugin-sql";
-  import { applyTheme } from "./script/apply-themes";
+  import { applyTheme } from "./lib/apply-themes";
   import Config from "../components/config/Config.svelte";
   import OsTab from "../components/osTab/osTab.svelte";
   import SideTab from "../components/sideTab/SideTab.svelte";
@@ -27,21 +27,20 @@
   let chats: ChatItem[] = [];
   let activeChatId: number | null = null;
 
-  // settings gerais usados pelo chat
   let general: GeneralSettings = {
     systemPrompt: "",
     appLanguage: "pt-BR",
     apiKeys: {
       openai: "",
       copilot: "",
-      anthropic: "",
+      anthropic: ""
     },
     primaryAI: "openai",
     selectedModels: {
       openai: "gpt-4",
       copilot: "copilot-code-x",
-      anthropic: "claude-2",
-    },
+      anthropic: "claude-2"
+    }
   };
 
   type DB = Awaited<ReturnType<typeof Database.load>>;
@@ -51,7 +50,7 @@
     const id = Date.now();
     const newChat: ChatItem = {
       id,
-      title: "Novo chat",
+      title: "Novo chat"
     };
 
     chats = [newChat, ...chats];
@@ -60,7 +59,7 @@
     if (db) {
       await db.execute(
         "INSERT INTO chats (id, title, created_at) VALUES ($1, $2, $3)",
-        [id, newChat.title, Date.now()],
+        [id, newChat.title, Date.now()]
       );
     }
   }
@@ -92,21 +91,27 @@
     }
   }
 
-  onMount(async () => {
-    console.log("[+page] onMount");
+  async function handleRenameChat(id: string | number, title: string) {
+    const numericId = Number(id);
 
-    // aplica tema inicial
+    chats = chats.map((c) => (c.id === numericId ? { ...c, title } : c));
+
+    if (db) {
+      await db.execute("UPDATE chats SET title = $1 WHERE id = $2", [
+        title,
+        numericId
+      ]);
+    }
+  }
+
+  onMount(async () => {
     const theme = themes[defaultTheme];
     if (theme) applyTheme(theme);
 
-    // carrega configurações gerais salvas no SQLite
     general = await loadGeneralSettings();
-    console.log("[+page] general carregado", general);
 
-    // abre banco/local
     db = await Database.load("sqlite:app.db");
 
-    // garante tabela dos chats
     await db.execute(`
       CREATE TABLE IF NOT EXISTS chats (
         id INTEGER PRIMARY KEY,
@@ -118,17 +123,16 @@
     type ChatRow = { id: number; title: string; created_at: number };
 
     const rows = (await db.select(
-      "SELECT id, title, created_at FROM chats ORDER BY created_at DESC",
+      "SELECT id, title, created_at FROM chats ORDER BY created_at DESC"
     )) as ChatRow[];
 
     if (rows.length > 0) {
       chats = rows.map((r) => ({
         id: r.id,
-        title: r.title,
+        title: r.title
       }));
       activeChatId = chats[0].id;
     } else {
-      // cria um chat padrão se ainda não existir nada
       const firstId = 1;
       const firstTitle = "Novo chat";
 
@@ -137,13 +141,10 @@
 
       await db.execute(
         "INSERT INTO chats (id, title, created_at) VALUES ($1, $2, $3)",
-        [firstId, firstTitle, Date.now()],
+        [firstId, firstTitle, Date.now()]
       );
     }
 
-    console.log("[+page] chats carregados", chats, "active:", activeChatId);
-
-    // tamanho inicial da janela
     invoke("plugin:window|inner_size")
       .then((size: any) => {
         windowWidth = size.width;
@@ -203,7 +204,7 @@
 
       await invoke("plugin:window|set_size", {
         width: newWidth,
-        height: newHeight,
+        height: newHeight
       });
     };
 
@@ -221,12 +222,63 @@
   <OsTab />
 
   <div class="app">
-    <SideTab {chats} {activeChatId} onNewChat={handleNewChat} onSelectChat={handleSelectChat} onDeleteChat={handleDeleteChat} onDeleteAllChats={handleDeleteAllChats} {openConfig}/>
+    <div class="app-shell">
+      <SideTab
+        {chats}
+        {activeChatId}
+        onNewChat={handleNewChat}
+        onSelectChat={handleSelectChat}
+        onDeleteChat={handleDeleteChat}
+        onDeleteAllChats={handleDeleteAllChats}
+        onRenameChat={handleRenameChat}
+        {openConfig}
+      />
 
-      <main>
-        <Input />
+      <main class="app-content">
+        <Input {general} {activeChatId} />
       </main>
+    </div>
 
-      <Config bind:isOpen={isConfigOpen} {themes} {currentThemeId} on:changeTheme={(e) => handleThemeChange(e.detail.id)} on:updateGeneral={handleUpdateGeneral}/>
+    <Config
+      bind:isOpen={isConfigOpen}
+      {themes}
+      {currentThemeId}
+      on:changeTheme={(e) => handleThemeChange(e.detail.id)}
+      on:updateGeneral={handleUpdateGeneral}
+    />
   </div>
 </div>
+
+<style>
+  .app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+  }
+
+  .app {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .app-shell {
+    display: flex;
+    flex-direction: row;
+    flex: 1 1 auto;
+    min-height: 0;
+    background: var(--bg-body);
+  }
+
+  .app-content {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+    display: flex;
+    align-items: stretch;
+  }
+</style>

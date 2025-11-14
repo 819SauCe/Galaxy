@@ -1,7 +1,8 @@
 <script lang="ts">
   import { createEventDispatcher, onMount, onDestroy } from "svelte";
   import { saveSetting, loadSetting } from "../../routes/lib/data/settingsStore";
-  import "./Config.css"
+  import "./Config.css";
+  import type { GeneralSettings } from "../../routes/lib/config";
 
   export let isOpen = false;
   export let themes: Record<string, any> = {};
@@ -56,7 +57,7 @@
   let apiKeys: Record<string, string> = {
     openai: "",
     copilot: "",
-    anthropic: "",
+    anthropic: ""
   };
 
   const aiProviders = [
@@ -66,9 +67,9 @@
       bullets: [
         "Excelente geração de linguagem natural e compreensão de contexto",
         "Versátil para conversas, resumos, tradução e criatividade",
-        "Modelos disponíveis para maior capacidade (gpt-4) ou custo reduzido (gpt-3.5)",
+        "Modelos disponíveis para maior capacidade (gpt-4) ou custo reduzido (gpt-3.5)"
       ],
-      models: ["gpt-4", "gpt-4o", "gpt-3.5-turbo"],
+      models: ["gpt-5.1-2025-11-13", "sora-2", "gpt-realtime-2025-08-28"]
     },
     {
       id: "copilot",
@@ -76,19 +77,19 @@
       bullets: [
         "Otimizado para assistência de programação e completions de código",
         "Útil para gerar snippets, refatoração e explicações de trechos",
-        "Melhor para produtividade dev — integra bem com fluxos de IDE",
+        "Melhor para produtividade dev — integra bem com fluxos de IDE"
       ],
-      models: ["copilot-code-x", "copilot-chat"],
+      models: ["copilot-code-x", "copilot-chat"]
     },
     {
       id: "anthropic",
       name: "Anthropic",
       bullets: [
         "Mais focado em segurança e alinhamento",
-        "Bom para instruções sensíveis e completions longos",
+        "Bom para instruções sensíveis e completions longos"
       ],
-      models: ["claude-2", "claude-instant"],
-    },
+      models: ["claude-2", "claude-instant"]
+    }
   ];
 
   let primaryAI: string = aiProviders[0].id;
@@ -96,7 +97,7 @@
   let selectedModels: Record<string, string> = {
     openai: aiProviders[0].models[0],
     copilot: aiProviders[1].models[0],
-    anthropic: aiProviders[2].models[0],
+    anthropic: aiProviders[2].models[0]
   };
 
   let isDesktop = true;
@@ -115,7 +116,7 @@
       "--bg-surface-muted",
       "--sidebar-bg",
       "--chat-bot-bg",
-      "--input-bg",
+      "--input-bg"
     ];
 
     const cs = getComputedStyle(root);
@@ -125,9 +126,9 @@
       if (val.startsWith("rgb")) {
         const nums = val.match(/\d+/g);
         if (nums && nums.length >= 3) {
-          const r = nums[0],
-            g = nums[1],
-            b = nums[2];
+          const r = nums[0];
+          const g = nums[1];
+          const b = nums[2];
           root.style.setProperty(v, `rgba(${r}, ${g}, ${b}, ${alpha})`);
         }
       } else if (val.startsWith("#")) {
@@ -139,12 +140,12 @@
 
     dispatch("changeAppearance", {
       transparency: desktopTransparency,
-      blur: desktopBlur,
+      blur: desktopBlur
     });
 
     await saveSetting("appearance", {
       desktopTransparency,
-      desktopBlur,
+      desktopBlur
     });
   }
 
@@ -157,12 +158,12 @@
   }
 
   async function updateGeneral() {
-    const general = {
+    const general: GeneralSettings = {
       systemPrompt,
       appLanguage,
       apiKeys,
       primaryAI,
-      selectedModels,
+      selectedModels
     };
     dispatch("updateGeneral", general);
     await saveSetting("general", general);
@@ -185,7 +186,7 @@
         appLanguage,
         primaryAI,
         selectedModels,
-        apiKeys,
+        apiKeys
       });
 
       systemPrompt = general.systemPrompt;
@@ -196,14 +197,14 @@
 
       const appearance = await loadSetting("appearance", {
         desktopTransparency,
-        desktopBlur,
+        desktopBlur
       });
 
       desktopTransparency = appearance.desktopTransparency;
       desktopBlur = appearance.desktopBlur;
 
       const themeSetting = await loadSetting("theme", {
-        themeId: currentThemeId,
+        themeId: currentThemeId
       });
 
       if (themeSetting.themeId && themeSetting.themeId !== currentThemeId) {

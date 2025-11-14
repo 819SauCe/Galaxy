@@ -1,17 +1,15 @@
+
+
 :root {
   --bg-body: #111;
   --bg-surface: #1a1a1a;
   --bg-surface-muted: #222;
-
   --text-primary: #fff;
   --text-secondary: #aaa;
-
   --accent: #0a84ff;
-
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 18px;
-
   --shadow-soft: 0 4px 15px rgba(0,0,0,0.3);
   --app-blur: 0px;
   --app-transparency: 1;

@@ -9,11 +9,11 @@ export const load: LayoutLoad = async () => {
     defaultTheme: themesJson.defaultTheme
   };
 };
-
+/*
 window.addEventListener("contextmenu", (event) => {
   event.preventDefault();
 });
-
+*/
 window.addEventListener("keydown", (e) => {
   if (e.key === "F12") {
     e.preventDefault();
