@@ -1,7 +1,7 @@
 export const ssr = false;
 
 import type { LayoutLoad } from './$types';
-import themesJson from './data/themes.json';
+import themesJson from './lib/data/themes.json';
 
 export const load: LayoutLoad = async () => {
   return {

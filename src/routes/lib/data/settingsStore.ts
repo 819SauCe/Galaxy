@@ -1,5 +1,5 @@
 import Database from "@tauri-apps/plugin-sql";
-import type { GeneralSettings } from "../lib/config";
+import type { GeneralSettings } from "../config";
 
 let dbPromise: Promise<any> | null = null;
 

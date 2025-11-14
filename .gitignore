@@ -12,3 +12,4 @@ vite.config.ts.timestamp-*
 /gen/schemas
 */target/
 */gen/schemas
+.vscode

@@ -3,16 +3,13 @@
   import { invoke } from "@tauri-apps/api/core";
   import Database from "@tauri-apps/plugin-sql";
   import { applyTheme } from "./script/apply-themes";
-
-  import Config from "./components/Config.svelte";
-  import OsTab from "./components/osTab.svelte";
-  import SideTab from "./components/SideTab.svelte";
-  import Chat from "./components/Chat.svelte";
-
-  import { loadGeneralSettings } from "./data/settingsStore";
+  import Config from "../components/config/Config.svelte";
+  import OsTab from "../components/osTab/osTab.svelte";
+  import SideTab from "../components/sideTab/SideTab.svelte";
+  import { loadGeneralSettings } from "./lib/data/settingsStore";
   import type { GeneralSettings } from "./lib/config";
+  import Input from "../components/chat/Chat.svelte";
 
-  // vem do +layout.ts
   export let data: {
     themes: Record<string, any>;
     defaultTheme: string;
@@ -223,27 +220,13 @@
 <div class="app-container">
   <OsTab />
 
-  <div class="content">
-    <SideTab
-      {chats}
-      {activeChatId}
-      onNewChat={handleNewChat}
-      onSelectChat={handleSelectChat}
-      onDeleteChat={handleDeleteChat}
-      onDeleteAllChats={handleDeleteAllChats}
-      {openConfig}
-      userName="Dev Tauri"
-    />
+  <div class="app">
+    <SideTab {chats} {activeChatId} onNewChat={handleNewChat} onSelectChat={handleSelectChat} onDeleteChat={handleDeleteChat} onDeleteAllChats={handleDeleteAllChats} {openConfig}/>
 
-    <Config
-      bind:isOpen={isConfigOpen}
-      {themes}
-      {currentThemeId}
-      on:changeTheme={(e) => handleThemeChange(e.detail.id)}
-      on:updateGeneral={handleUpdateGeneral}
-    />
+      <main>
+        <Input />
+      </main>
 
-    <!-- AQUI é a área do chat -->
-    <Chat {activeChatId} {general} />
+      <Config bind:isOpen={isConfigOpen} {themes} {currentThemeId} on:changeTheme={(e) => handleThemeChange(e.detail.id)} on:updateGeneral={handleUpdateGeneral}/>
   </div>
 </div>

@@ -27,39 +27,11 @@ html, body {
   overflow: hidden;
 }
 
-#svelte {
-  height: 100%;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.drag-region {
-  -webkit-app-region: drag;
-}
-
-.no-drag {
-  -webkit-app-region: no-drag;
-}
-
 .app {
   display: grid;
   grid-template-columns: 260px 1fr;
   height: 100vh;
   backdrop-filter: blur(var(--app-blur));
-}
-
-.sidebar {
-  background: var(--bg-surface-muted);
-  border-right: 1px solid var(--border-subtle);
-  padding: 16px;
-}
-
-.chat {
-  background: var(--bg-surface);
-  display: flex;
-  flex-direction: column;
-  height: 100%;
 }
 
 .messages {
