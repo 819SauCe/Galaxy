@@ -65,7 +65,7 @@ src-tauri/
 ### Requirements
 
 - Windows
-- Download the .msi or .exe installer `https://github.com/819SauCe/Galaxy/releases/tag/v1`
+- Download the .msi or .exe installer<br> `https://github.com/819SauCe/Galaxy/releases/tag/v1`
 
 ### Steps
 
